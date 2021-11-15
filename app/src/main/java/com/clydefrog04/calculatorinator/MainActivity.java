@@ -33,7 +33,6 @@ public class MainActivity extends AppCompatActivity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
-//        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);//todo: create landscape view
         //init vars
         answerDisplay = findViewById(R.id.answerDisplay);
         numbers = new ArrayList<>();
@@ -44,8 +43,20 @@ public class MainActivity extends AppCompatActivity {
         answerDisplay.setFocusableInTouchMode(false);
     }
 
-    public String getEmojiByUnicode(int unicode){
+    public String getEmojiByUnicode(int unicode) {
         return new String(Character.toChars(unicode));
+    }
+
+    private boolean canAddDot() {
+        int lastPlus = answer.lastIndexOf("+");
+        int lastminus = answer.lastIndexOf("-");
+        int lastmult = answer.lastIndexOf("*");
+        int lastDiv = answer.lastIndexOf("/");
+        int lastplusMin = Math.max(lastPlus, lastminus);
+        int lastMultDiv = Math.max(lastmult, lastDiv);
+        int checkIndex = Math.max(lastplusMin, lastMultDiv);
+        int lastDot = answer.lastIndexOf(".");
+        return lastDot < checkIndex;
     }
 
     public void digitBtnHandler(View view) {
@@ -60,18 +71,8 @@ public class MainActivity extends AppCompatActivity {
                 case R.id.period:
                     if (!answer.contains(".")) {
                         answer += appendText;
-                    } else {
-                        int lastPlus = answer.lastIndexOf("+");
-                        int lastminus = answer.lastIndexOf("-");
-                        int lastmult = answer.lastIndexOf("*");
-                        int lastDiv = answer.lastIndexOf("/");
-                        int lastplusMin = Math.max(lastPlus, lastminus);
-                        int lastMultDiv = Math.max(lastmult, lastDiv);
-                        int checkIndex = Math.max(lastplusMin, lastMultDiv);
-                        int lastDot = answer.lastIndexOf(".");
-                        if (lastDot < checkIndex) {
-                            answer += ".";
-                        }
+                    } else if (canAddDot()) {
+                        answer += ".";
                     }
                     break;
                 case R.id.clear:
@@ -79,13 +80,17 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case R.id.solveBtn:
                     if (isLastCharOperator()) break;
-                    solveProblem(answer.replaceAll(",",""));
+                    solveProblem(answer.replaceAll(",", ""));
+                    break;
+                case R.id.minusBtn://minus handled differently to allow negative input
+                    if(!isLastCharOperator()){
+                        answer += appendText;
+                    }
                     break;
                 case R.id.plusBtn:
-                case R.id.minusBtn:
                 case R.id.multiplyBtn:
                 case R.id.divideBtn:
-                    if (isLastCharOperator()) {
+                    if (isLastCharOperator() || answer.length() == 0) {
                         break;
                     }
                     //intentional fallthrough
@@ -95,28 +100,38 @@ public class MainActivity extends AppCompatActivity {
                     break;
             }
             answerDisplay.setText(answer);
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private boolean isLastCharOperator(){
-        if(answer.length() <= 0) return true;//kind of side effecty/hacky, but prevents first char from being an operator
-        char lastChar = answer.charAt(answer.length()-1);
+    private boolean isLastCharOperator() {
+        if (answer.length() <= 0)//this check is necessary since the lastChar expects there to be some length
+            return false;
+        char lastChar = answer.charAt(answer.length() - 1);
         return (lastChar == '+' ||
                 lastChar == '-' ||
                 lastChar == '*' ||
                 lastChar == '/');
     }
 
-    private void solveProblem(String equation){
+    private void solveProblem(String equation) {
 //        Log.i("info", R.string.)
         String pattern = "((?<=[/*\\-+])|(?=[/*\\-+]))";
         ArrayList<String> equationParts = new ArrayList<>(Arrays.asList(equation.split(pattern)));
-        if(equationParts.size() <= 2) return;//prevents a crash if the equation is something like 5+
+
+        //first check if first input was negative, and handle accordingly
+        if(equationParts.get(0).equals("-")){
+            double newFirstIndex = Double.parseDouble(equationParts.get(1)) * -1;
+            equationParts.remove(0);
+            equationParts.set(0, String.valueOf(newFirstIndex));
+        }
+
+        if (equationParts.size() <= 2)
+            return;//prevents a crash if the equation is something like 5+
         while (equationParts.size() > 1) {
             if (equationParts.contains("*")) {
-                int index = equationParts.indexOf("*");
+                int index = equationParts.indexOf("*");//todo break these into one function call
                 double operand1 = Double.parseDouble(equationParts.get(index - 1));
                 double operand2 = Double.parseDouble(equationParts.get(index + 1));
                 double product = operand1 * operand2;
