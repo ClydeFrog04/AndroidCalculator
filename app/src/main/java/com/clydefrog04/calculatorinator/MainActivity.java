@@ -8,6 +8,8 @@ import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 
@@ -27,9 +29,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);//todo: create landscape view
-
+//        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);//todo: create landscape view
         //init vars
         answerDisplay = findViewById(R.id.answerDisplay);
         numbers = new ArrayList<>();
@@ -51,29 +55,65 @@ public class MainActivity extends AppCompatActivity {
         Log.i("info", "btn id:" + view.getId());
         Log.i("info", String.valueOf(view.getWidth()));
 
-        switch (view.getId()) {
-            case R.id.period:
-                if (!answer.contains(".")) {
+        try {
+            switch (view.getId()) {
+                case R.id.period:
+                    if (!answer.contains(".")) {
+                        answer += appendText;
+                    } else {
+                        int lastPlus = answer.lastIndexOf("+");
+                        int lastminus = answer.lastIndexOf("-");
+                        int lastmult = answer.lastIndexOf("*");
+                        int lastDiv = answer.lastIndexOf("/");
+                        int lastplusMin = Math.max(lastPlus, lastminus);
+                        int lastMultDiv = Math.max(lastmult, lastDiv);
+                        int checkIndex = Math.max(lastplusMin, lastMultDiv);
+                        int lastDot = answer.lastIndexOf(".");
+                        if (lastDot < checkIndex) {
+                            answer += ".";
+                        }
+                    }
+                    break;
+                case R.id.clear:
+                    answer = "";
+                    break;
+                case R.id.solveBtn:
+                    if (isLastCharOperator()) break;
+                    solveProblem(answer.replaceAll(",",""));
+                    break;
+                case R.id.plusBtn:
+                case R.id.minusBtn:
+                case R.id.multiplyBtn:
+                case R.id.divideBtn:
+                    if (isLastCharOperator()) {
+                        break;
+                    }
+                    //intentional fallthrough
+                default:
+                    Log.i("debug", "default called");
                     answer += appendText;
-                }
-                break;
-            case R.id.clear:
-                answer = "";
-                break;
-            case R.id.solveBtn:
-                solveProblem(answer);
-                break;
-            default:
-                Log.i("debug", "default called");
-                answer += appendText;
-                break;
+                    break;
+            }
+            answerDisplay.setText(answer);
+        }catch (Exception e){
+            e.printStackTrace();
         }
-        answerDisplay.setText(answer);
+    }
+
+    private boolean isLastCharOperator(){
+        if(answer.length() <= 0) return true;//kind of side effecty/hacky, but prevents first char from being an operator
+        char lastChar = answer.charAt(answer.length()-1);
+        return (lastChar == '+' ||
+                lastChar == '-' ||
+                lastChar == '*' ||
+                lastChar == '/');
     }
 
     private void solveProblem(String equation){
+//        Log.i("info", R.string.)
         String pattern = "((?<=[/*\\-+])|(?=[/*\\-+]))";
         ArrayList<String> equationParts = new ArrayList<>(Arrays.asList(equation.split(pattern)));
+        if(equationParts.size() <= 2) return;//prevents a crash if the equation is something like 5+
         while (equationParts.size() > 1) {
             if (equationParts.contains("*")) {
                 int index = equationParts.indexOf("*");
