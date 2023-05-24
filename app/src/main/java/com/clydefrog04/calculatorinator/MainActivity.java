@@ -80,6 +80,9 @@ public class MainActivity extends AppCompatActivity {
                 case R.id.clear:
                     answer = "";
                     break;
+                case R.id.backspace:
+                    answer = answer.substring(0, answer.length() - 1);
+                    break;
                 case R.id.solveBtn:
                     if (isLastCharOperator()) break;
                     solveProblem(answer.replaceAll(",", ""));//removing commas for computation only, they WILL be included in the final string :]

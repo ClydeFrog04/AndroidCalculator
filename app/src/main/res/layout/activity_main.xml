@@ -50,7 +50,7 @@
         android:onClick="digitBtnHandler"
         android:text="Clear"
         app:layout_constraintBottom_toTopOf="@+id/sevenBtn"
-        app:layout_constraintEnd_toEndOf="@+id/divideBtn"
+        app:layout_constraintEnd_toEndOf="@+id/nineBtn"
         app:layout_constraintStart_toStartOf="@+id/sevenBtn" />
 
     <Button
@@ -204,5 +204,15 @@
         android:text="/"
         app:layout_constraintStart_toEndOf="@+id/multiplyBtn"
         app:layout_constraintTop_toTopOf="@+id/nineBtn" />
+
+    <Button
+        android:id="@+id/backspace"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="digitBtnHandler"
+        android:text="Back"
+        app:layout_constraintBottom_toBottomOf="@+id/clear"
+        app:layout_constraintEnd_toEndOf="@+id/divideBtn"
+        app:layout_constraintStart_toStartOf="@+id/multiplyBtn" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
