@@ -4,6 +4,7 @@ package com.clydefrog04.calculatorinator;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.SuppressLint;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.util.Log;
@@ -59,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
         return lastDot < checkIndex;
     }
 
+    @SuppressLint("NonConstantResourceId")
     public void digitBtnHandler(View view) {
         Button btn = (Button) view;
         String appendText = btn.getText().toString();
@@ -69,9 +71,9 @@ public class MainActivity extends AppCompatActivity {
         try {
             switch (view.getId()) {
                 case R.id.period:
-                    if (!answer.contains(".")) {
+                    if (!answer.contains(".")) {//if not dot exists, then allow, probably could just have this be in the can add dot function as the first check... duuuh
                         answer += appendText;
-                    } else if (canAddDot()) {
+                    } else if (canAddDot()) {//this was added to allow the ability to type say "5.2+2.4" which if we are just checking for contains dot or not, would be disallowed
                         answer += ".";
                     }
                     break;
@@ -80,9 +82,9 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case R.id.solveBtn:
                     if (isLastCharOperator()) break;
-                    solveProblem(answer.replaceAll(",", ""));
+                    solveProblem(answer.replaceAll(",", ""));//removing commas for computation only, they WILL be included in the final string :]
                     break;
-                case R.id.minusBtn://minus handled differently to allow negative input
+                case R.id.minusBtn://minus handled differently than other operators to allow negative input
                     if(!isLastCharOperator()){
                         answer += appendText;
                     }
