@@ -100,7 +100,17 @@ public class MainActivity extends AppCompatActivity {
                     }
                     //intentional fallthrough
                 default:
-                    Log.i("debug", "default called");
+                    Log.i("default", "default called");
+//                    double val = Double.parseDouble(equationParts.get(0));
+//                    DecimalFormat format = new DecimalFormat();
+//                    format.setMaximumFractionDigits(6);
+//                    answer = format.format(val);
+//                    answerDisplay.setText(answer);
+                    DecimalFormat format = new DecimalFormat();
+                    format.setMaximumFractionDigits(6);
+
+//                    answer += format.format(appendText);
+                    Log.i("default", appendText);
                     answer += appendText;
                     break;
             }
