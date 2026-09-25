@@ -13,6 +13,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -25,6 +26,7 @@ public class MainActivity extends AppCompatActivity {
     String answer = "";
     int dead = 0x1F635;
     EditText answerDisplay;
+    TextView lastEquationDisplay;
     ArrayList<String> numbers;
     ArrayList<String> operators;
     private static final DecimalFormatSymbols US_SYMBOLS = new DecimalFormatSymbols(Locale.US);
@@ -42,12 +44,17 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         //init vars
         answerDisplay = findViewById(R.id.answerDisplay);
+        lastEquationDisplay = findViewById(R.id.lastEquation);
         numbers = new ArrayList<>();
         operators = new ArrayList<>();
 
         answerDisplay.setText(answer);
         answerDisplay.setTextIsSelectable(false);
         answerDisplay.setFocusableInTouchMode(false);
+        lastEquationDisplay.setText("");
+        lastEquationDisplay.setTextIsSelectable(false);
+        lastEquationDisplay.setFocusableInTouchMode(false);
+
         Button periodButton = findViewById(R.id.period);
         Locale currentLocale = getResources().getConfiguration().getLocales().get(0);
         if(!currentLocale.equals(Locale.US)){
@@ -106,18 +113,22 @@ public class MainActivity extends AppCompatActivity {
                     lastOperator = null;
                     lastOperand = null;
                     justSolved = false;
+                    lastEquationDisplay.setText("");
                     break;
                 case R.id.backspace:
                     answer = answer.substring(0, answer.length() - 1);
                     break;
                 case R.id.solveBtn:
-                    String cleaned = answer.replaceAll(",", "");//removing commas for computation only, they WILL be included in the final string :]
+                    String cleaned = answer.replaceAll(",", "");
                     if (justSolved && lastOperator != null && lastOperand != null) {
-                        // repeat-equals: reapply last op to the current result
-                        solveProblem(cleaned + lastOperator + lastOperand);
+                        String repeatEquation = cleaned + lastOperator + lastOperand;
+                        String repeatEquationDisplay = answer + lastOperator + lastOperand;
+                        lastEquationDisplay.setText(toLocalizedDisplay(repeatEquationDisplay));
+                        solveProblem(repeatEquation);
                     } else {
                         if (isLastCharOperator()) break;
                         captureLastOperation(cleaned);
+                        lastEquationDisplay.setText(toLocalizedDisplay(answer));
                         solveProblem(cleaned);
                     }
                     justSolved = true;
