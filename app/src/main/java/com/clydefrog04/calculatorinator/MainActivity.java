@@ -28,6 +28,9 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<String> numbers;
     ArrayList<String> operators;
     private static final DecimalFormatSymbols US_SYMBOLS = new DecimalFormatSymbols(Locale.US);
+    private String lastOperator = null;
+    private String lastOperand = null;
+    private boolean justSolved = false;
 
 
     @Override
@@ -56,6 +59,18 @@ public class MainActivity extends AppCompatActivity {
         return new String(Character.toChars(unicode));
     }
 
+    private void captureLastOperation(String equation) {
+        String pattern = "((?<=[/*\\-+])|(?=[/*\\-+]))";
+        String[] parts = equation.split(pattern);
+        if (parts.length >= 2) {
+            lastOperator = parts[parts.length - 2];
+            lastOperand = parts[parts.length - 1];
+        } else {
+            lastOperator = null;
+            lastOperand = null;
+        }
+    }
+
     private boolean canAddDot() {
         int lastPlus = answer.lastIndexOf("+");
         int lastminus = answer.lastIndexOf("-");
@@ -72,9 +87,10 @@ public class MainActivity extends AppCompatActivity {
     public void digitBtnHandler(View view) {
         Button btn = (Button) view;
         String appendText = btn.getText().toString();
-        Log.i("info", appendText);
-        Log.i("info", "btn id:" + view.getId());
-        Log.i("info", String.valueOf(view.getWidth()));
+
+        if (view.getId() != R.id.solveBtn) {
+            justSolved = false;
+        }
 
         try {
             switch (view.getId()) {
@@ -87,16 +103,27 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case R.id.clear:
                     answer = "";
+                    lastOperator = null;
+                    lastOperand = null;
+                    justSolved = false;
                     break;
                 case R.id.backspace:
                     answer = answer.substring(0, answer.length() - 1);
                     break;
                 case R.id.solveBtn:
-                    if (isLastCharOperator()) break;
-                    solveProblem(answer.replaceAll(",", ""));//removing commas for computation only, they WILL be included in the final string :]
+                    String cleaned = answer.replaceAll(",", "");//removing commas for computation only, they WILL be included in the final string :]
+                    if (justSolved && lastOperator != null && lastOperand != null) {
+                        // repeat-equals: reapply last op to the current result
+                        solveProblem(cleaned + lastOperator + lastOperand);
+                    } else {
+                        if (isLastCharOperator()) break;
+                        captureLastOperation(cleaned);
+                        solveProblem(cleaned);
+                    }
+                    justSolved = true;
                     break;
                 case R.id.minusBtn://minus handled differently than other operators to allow negative input
-                    if(!isLastCharOperator()){
+                    if (!isLastCharOperator()) {
                         answer += appendText;
                     }
                     break;
@@ -108,9 +135,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                     //intentional fallthrough
                 default:
-                    DecimalFormat format = new DecimalFormat();
-                    format.setMaximumFractionDigits(6);
-                    Log.i("default", appendText);
                     answer += appendText;
                     break;
             }
