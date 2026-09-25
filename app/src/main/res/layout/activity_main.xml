@@ -11,14 +11,14 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="50dp"
-        android:layout_marginTop="100dp"
         android:layout_marginEnd="50dp"
+        android:layout_marginBottom="20dp"
         android:ems="10"
         android:inputType="numberDecimal"
         android:minHeight="48dp"
+        app:layout_constraintBottom_toTopOf="@+id/backspace"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintStart_toStartOf="parent" />
 
     <Button
         android:id="@+id/zeroBtn"
@@ -214,5 +214,15 @@
         app:layout_constraintBottom_toBottomOf="@+id/clear"
         app:layout_constraintEnd_toEndOf="@+id/divideBtn"
         app:layout_constraintStart_toStartOf="@+id/multiplyBtn" />
+
+    <TextView
+        android:id="@+id/lastEquation"
+        android:layout_width="155dp"
+        android:layout_height="38dp"
+        android:layout_marginStart="50dp"
+        android:layout_marginBottom="20dp"
+        android:text="TextView"
+        app:layout_constraintBottom_toTopOf="@+id/answerDisplay"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

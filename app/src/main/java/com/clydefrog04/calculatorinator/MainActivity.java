@@ -13,8 +13,10 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
@@ -24,8 +26,14 @@ public class MainActivity extends AppCompatActivity {
     String answer = "";
     int dead = 0x1F635;
     EditText answerDisplay;
+    TextView lastEquationDisplay;
     ArrayList<String> numbers;
     ArrayList<String> operators;
+    private static final DecimalFormatSymbols US_SYMBOLS = new DecimalFormatSymbols(Locale.US);
+    private String lastOperator = null;
+    private String lastOperand = null;
+    private boolean justSolved = false;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,16 +44,38 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         //init vars
         answerDisplay = findViewById(R.id.answerDisplay);
+        lastEquationDisplay = findViewById(R.id.lastEquation);
         numbers = new ArrayList<>();
         operators = new ArrayList<>();
 
         answerDisplay.setText(answer);
         answerDisplay.setTextIsSelectable(false);
         answerDisplay.setFocusableInTouchMode(false);
+        lastEquationDisplay.setText("");
+        lastEquationDisplay.setTextIsSelectable(false);
+        lastEquationDisplay.setFocusableInTouchMode(false);
+
+        Button periodButton = findViewById(R.id.period);
+        Locale currentLocale = getResources().getConfiguration().getLocales().get(0);
+        if(!currentLocale.equals(Locale.US)){
+            periodButton.setText(",");
+        }
     }
 
     public String getEmojiByUnicode(int unicode) {
         return new String(Character.toChars(unicode));
+    }
+
+    private void captureLastOperation(String equation) {
+        String pattern = "((?<=[/*\\-+])|(?=[/*\\-+]))";
+        String[] parts = equation.split(pattern);
+        if (parts.length >= 2) {
+            lastOperator = parts[parts.length - 2];
+            lastOperand = parts[parts.length - 1];
+        } else {
+            lastOperator = null;
+            lastOperand = null;
+        }
     }
 
     private boolean canAddDot() {
@@ -64,31 +94,47 @@ public class MainActivity extends AppCompatActivity {
     public void digitBtnHandler(View view) {
         Button btn = (Button) view;
         String appendText = btn.getText().toString();
-        Log.i("info", appendText);
-        Log.i("info", "btn id:" + view.getId());
-        Log.i("info", String.valueOf(view.getWidth()));
+
+        if (view.getId() != R.id.solveBtn) {
+            justSolved = false;
+        }
 
         try {
             switch (view.getId()) {
                 case R.id.period:
                     if (!answer.contains(".")) {//if not dot exists, then allow, probably could just have this be in the can add dot function as the first check... duuuh
-                        answer += appendText;
+                        answer += ".";
                     } else if (canAddDot()) {//this was added to allow the ability to type say "5.2+2.4" which if we are just checking for contains dot or not, would be disallowed
                         answer += ".";
                     }
                     break;
                 case R.id.clear:
                     answer = "";
+                    lastOperator = null;
+                    lastOperand = null;
+                    justSolved = false;
+                    lastEquationDisplay.setText("");
                     break;
                 case R.id.backspace:
                     answer = answer.substring(0, answer.length() - 1);
                     break;
                 case R.id.solveBtn:
-                    if (isLastCharOperator()) break;
-                    solveProblem(answer.replaceAll(",", ""));//removing commas for computation only, they WILL be included in the final string :]
+                    String cleaned = answer.replaceAll(",", "");
+                    if (justSolved && lastOperator != null && lastOperand != null) {
+                        String repeatEquation = cleaned + lastOperator + lastOperand;
+                        String repeatEquationDisplay = answer + lastOperator + lastOperand;
+                        lastEquationDisplay.setText(toLocalizedDisplay(repeatEquationDisplay));
+                        solveProblem(repeatEquation);
+                    } else {
+                        if (isLastCharOperator()) break;
+                        captureLastOperation(cleaned);
+                        lastEquationDisplay.setText(toLocalizedDisplay(answer));
+                        solveProblem(cleaned);
+                    }
+                    justSolved = true;
                     break;
                 case R.id.minusBtn://minus handled differently than other operators to allow negative input
-                    if(!isLastCharOperator()){
+                    if (!isLastCharOperator()) {
                         answer += appendText;
                     }
                     break;
@@ -100,11 +146,10 @@ public class MainActivity extends AppCompatActivity {
                     }
                     //intentional fallthrough
                 default:
-                    Log.i("debug", "default called");
                     answer += appendText;
                     break;
             }
-            answerDisplay.setText(answer);
+            answerDisplay.setText(toLocalizedDisplay(answer));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -118,6 +163,35 @@ public class MainActivity extends AppCompatActivity {
                 lastChar == '-' ||
                 lastChar == '*' ||
                 lastChar == '/');
+    }
+
+    private String toLocalizedDisplay(String canonical) {
+        DecimalFormatSymbols localeSymbols = DecimalFormatSymbols.getInstance(Locale.getDefault());
+        char localeDecimal = localeSymbols.getDecimalSeparator();
+        char localeGrouping = localeSymbols.getGroupingSeparator();
+
+        // if the locale matches the internal logic, no need to do work:]
+        if (localeDecimal == '.' && localeGrouping == ',') {
+            return canonical;
+        }
+
+        final char placeholder = '\u0000';
+        StringBuilder sb = new StringBuilder(canonical.length());
+        for (char c : canonical.toCharArray()) {
+            if (c == ',') {
+                sb.append(placeholder);
+            } else if (c == '.') {
+                sb.append(localeDecimal);
+            } else {
+                sb.append(c);
+            }
+        }
+        for (int i = 0; i < sb.length(); i++) {
+            if (sb.charAt(i) == placeholder) {
+                sb.setCharAt(i, localeGrouping);
+            }
+        }
+        return sb.toString();
     }
 
     private void solveProblem(String equation) {
@@ -175,9 +249,11 @@ public class MainActivity extends AppCompatActivity {
         Log.i("equation", String.valueOf(equationParts));
 //        answer = getEmojiByUnicode(dead);
         double val = Double.parseDouble(equationParts.get(0));
-        DecimalFormat format = new DecimalFormat();
-        format.setMaximumFractionDigits(6);
+//        DecimalFormat format = new DecimalFormat();
+//        format.setMaximumFractionDigits(6);
+        DecimalFormat format = new DecimalFormat("#,##0.######", US_SYMBOLS);
         answer = format.format(val);
-        answerDisplay.setText(answer);
+//        answer = format.format(val);
+        answerDisplay.setText(toLocalizedDisplay(answer));
     }
 }
