@@ -45,6 +45,11 @@ public class MainActivity extends AppCompatActivity {
         answerDisplay.setText(answer);
         answerDisplay.setTextIsSelectable(false);
         answerDisplay.setFocusableInTouchMode(false);
+        Button periodButton = findViewById(R.id.period);
+        Locale currentLocale = getResources().getConfiguration().getLocales().get(0);
+        if(!currentLocale.equals(Locale.US)){
+            periodButton.setText(",");
+        }
     }
 
     public String getEmojiByUnicode(int unicode) {
