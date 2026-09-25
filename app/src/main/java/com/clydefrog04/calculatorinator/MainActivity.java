@@ -15,6 +15,7 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
@@ -26,6 +27,8 @@ public class MainActivity extends AppCompatActivity {
     EditText answerDisplay;
     ArrayList<String> numbers;
     ArrayList<String> operators;
+    private static final DecimalFormatSymbols US_SYMBOLS = new DecimalFormatSymbols(Locale.US);
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
             switch (view.getId()) {
                 case R.id.period:
                     if (!answer.contains(".")) {//if not dot exists, then allow, probably could just have this be in the can add dot function as the first check... duuuh
-                        answer += appendText;
+                        answer += ".";
                     } else if (canAddDot()) {//this was added to allow the ability to type say "5.2+2.4" which if we are just checking for contains dot or not, would be disallowed
                         answer += ".";
                     }
@@ -100,21 +103,13 @@ public class MainActivity extends AppCompatActivity {
                     }
                     //intentional fallthrough
                 default:
-                    Log.i("default", "default called");
-//                    double val = Double.parseDouble(equationParts.get(0));
-//                    DecimalFormat format = new DecimalFormat();
-//                    format.setMaximumFractionDigits(6);
-//                    answer = format.format(val);
-//                    answerDisplay.setText(answer);
                     DecimalFormat format = new DecimalFormat();
                     format.setMaximumFractionDigits(6);
-
-//                    answer += format.format(appendText);
                     Log.i("default", appendText);
                     answer += appendText;
                     break;
             }
-            answerDisplay.setText(answer);
+            answerDisplay.setText(toLocalizedDisplay(answer));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -128,6 +123,35 @@ public class MainActivity extends AppCompatActivity {
                 lastChar == '-' ||
                 lastChar == '*' ||
                 lastChar == '/');
+    }
+
+    private String toLocalizedDisplay(String canonical) {
+        DecimalFormatSymbols localeSymbols = DecimalFormatSymbols.getInstance(Locale.getDefault());
+        char localeDecimal = localeSymbols.getDecimalSeparator();
+        char localeGrouping = localeSymbols.getGroupingSeparator();
+
+        // if the locale matches the internal logic, no need to do work:]
+        if (localeDecimal == '.' && localeGrouping == ',') {
+            return canonical;
+        }
+
+        final char placeholder = '\u0000';
+        StringBuilder sb = new StringBuilder(canonical.length());
+        for (char c : canonical.toCharArray()) {
+            if (c == ',') {
+                sb.append(placeholder);
+            } else if (c == '.') {
+                sb.append(localeDecimal);
+            } else {
+                sb.append(c);
+            }
+        }
+        for (int i = 0; i < sb.length(); i++) {
+            if (sb.charAt(i) == placeholder) {
+                sb.setCharAt(i, localeGrouping);
+            }
+        }
+        return sb.toString();
     }
 
     private void solveProblem(String equation) {
@@ -185,9 +209,11 @@ public class MainActivity extends AppCompatActivity {
         Log.i("equation", String.valueOf(equationParts));
 //        answer = getEmojiByUnicode(dead);
         double val = Double.parseDouble(equationParts.get(0));
-        DecimalFormat format = new DecimalFormat();
-        format.setMaximumFractionDigits(6);
+//        DecimalFormat format = new DecimalFormat();
+//        format.setMaximumFractionDigits(6);
+        DecimalFormat format = new DecimalFormat("#,##0.######", US_SYMBOLS);
         answer = format.format(val);
-        answerDisplay.setText(answer);
+//        answer = format.format(val);
+        answerDisplay.setText(toLocalizedDisplay(answer));
     }
 }
